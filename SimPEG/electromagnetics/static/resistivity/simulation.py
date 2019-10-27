@@ -41,7 +41,7 @@ class BaseDCSimulation(BaseEMSimulation):
     max_chunk_size = None
 
     @dask.delayed(pure=True)
-    def fields(self, m=None, calcJ=True):
+    def fields(self, m=None):
 
         mkl_set_num_threads(self.n_cpu)
 
