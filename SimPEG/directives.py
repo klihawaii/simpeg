@@ -597,10 +597,10 @@ class SaveOutputDictEveryIteration(SaveEveryIteration):
 
         # regCombo = ["phi_ms", "phi_msx"]
 
-        # if self.prob[0].mesh.dim >= 2:
+        # if self.simulation[0].mesh.dim >= 2:
         #     regCombo += ["phi_msy"]
 
-        # if self.prob[0].mesh.dim == 3:
+        # if self.simulation[0].mesh.dim == 3:
         #     regCombo += ["phi_msz"]
 
         # Initialize the output dict
@@ -722,7 +722,7 @@ class Update_IRLS(InversionDirective):
         self.phi_dm = []
         self.phi_dmx = []
         # Look for cases where the block models in to be scaled
-        for prob in self.prob:
+        for prob in self.simulation:
 
             if getattr(prob, 'coordinate_system', None) is not None:
                 if prob.coordinate_system == 'spherical':
@@ -972,7 +972,7 @@ class UpdatePreconditioner(InversionDirective):
             print("Approximated diag(JtJ) with linear operator")
 
             JtJdiag = np.zeros_like(self.invProb.model)
-            for prob, dmisfit in zip(self.prob, self.dmisfit.objfcts):
+            for prob, dmisfit in zip(self.simulation, self.dmisfit.objfcts):
 
                     if getattr(prob, 'getJtJdiag', None) is None:
                         assert getattr(prob, 'getJ', None) is not None, (
@@ -1027,9 +1027,9 @@ class Update_Wj(InversionDirective):
 
             def JtJv(v):
 
-                Jv = self.prob.Jvec(m, v)
+                Jv = self.simulation.Jvec(m, v)
 
-                return self.prob.Jtvec(m, Jv)
+                return self.simulation.Jtvec(m, Jv)
 
             JtJdiag = diagEst(JtJv, len(m), k=self.k)
             JtJdiag = JtJdiag / max(JtJdiag)
@@ -1084,7 +1084,7 @@ class UpdateSensitivityWeights(InversionDirective):
         m = self.invProb.model
 
         for prob, dmisfit in zip(
-            self.prob,
+            self.simulation,
             self.dmisfit.objfcts
         ):
 
@@ -1108,7 +1108,7 @@ class UpdateSensitivityWeights(InversionDirective):
 
         wr = np.zeros_like(self.invProb.model)
         if self.switch:
-            for prob_JtJ, prob, dmisfit in zip(self.JtJdiag, self.prob, self.dmisfit.objfcts):
+            for prob_JtJ, prob, dmisfit in zip(self.JtJdiag, self.simulation, self.dmisfit.objfcts):
 
                 wr += prob_JtJ + self.threshold
 
@@ -1134,7 +1134,7 @@ class UpdateSensitivityWeights(InversionDirective):
         # if self.ComboMisfitFun:
         JtJdiag = np.zeros_like(self.invProb.model)
         for prob, JtJ, dmisfit in zip(
-            self.prob, self.JtJdiag, self.dmisfit.objfcts
+            self.simulation, self.JtJdiag, self.dmisfit.objfcts
         ):
 
             JtJdiag += JtJ
@@ -1160,7 +1160,7 @@ class ProjectSphericalBounds(InversionDirective):
 
         self.invProb.model = m
 
-        for prob in self.prob:
+        for prob in self.simulation:
             prob.model = m
 
         self.opt.xc = m
@@ -1183,7 +1183,7 @@ class ProjectSphericalBounds(InversionDirective):
 
         self.invProb.phi_m_last = phi_m_last
 
-        for prob in self.prob:
+        for prob in self.simulation:
             prob.model = m
 
         self.opt.xc = m
