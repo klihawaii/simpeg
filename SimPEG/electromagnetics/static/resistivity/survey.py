@@ -245,7 +245,7 @@ class Survey(BaseSurvey):
                         )
                 self.electrode_locations = drapeTopotoLoc(
                     mesh, self.electrodes_info[0], actind=actind,
-                    topo=topography
+                    topo=topography, option=option
                 )
 
                 temp = (
