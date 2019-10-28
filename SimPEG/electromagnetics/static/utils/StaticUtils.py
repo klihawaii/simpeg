@@ -304,7 +304,7 @@ def apparent_resistivity(
 
     # Calculate apparent resistivity
     # absolute value is required because of the regularizer
-    rhoApp = np.abs(data.dobs*(1./(G+eps)))
+    rhoApp = np.abs(dobs*(1./(G+eps)))
 
     return rhoApp
 
@@ -675,7 +675,7 @@ def gen_DCIPsurvey_topo(survey_type, endl, topo, a, b, n, dim_flag='2.5D'):
         # All electrode locations
         M = np.c_[stn_x, stn_y]
         N = np.c_[stn_x + dl_x*b, stn_y + dl_y*b]
-        
+
         if np.size(topo) == 1:
             M = np.c_[M, np.zeros((nstn))]
             N = np.c_[N, np.zeros((nstn))]
@@ -685,14 +685,14 @@ def gen_DCIPsurvey_topo(survey_type, endl, topo, a, b, n, dim_flag='2.5D'):
             N = np.c_[N, fun_interp(N)]
 
     else:
-        
+
         # Station locations
         y1 = 0.
         y2 = 0.
         L = xy_2_r(x1, x2, y1, y2)
         nstn = int(np.floor(L / a))
         stn_x = x1 + np.array(range(int(nstn + 1)))*a
-        
+
         # All electrode locations
         if np.size(topo) == 1:
             M = np.c_[stn_x, np.zeros((nstn))]
@@ -707,7 +707,7 @@ def gen_DCIPsurvey_topo(survey_type, endl, topo, a, b, n, dim_flag='2.5D'):
     SrcList = []
 
     if survey_type != 'gradient':
-        
+
         if survey_type.lower() in ['pole-pole', 'pole-dipole']:
             N = M
         elif survey_type.lower() not in ['dipole-pole', 'dipole-dipole']:
@@ -717,19 +717,19 @@ def gen_DCIPsurvey_topo(survey_type, endl, topo, a, b, n, dim_flag='2.5D'):
             )
 
         for ii in range(0, int(nstn)):
-            
+
             if dim_flag is '3D':
                 D = xy_2_r(M[ii, 0], x2, M[ii, 1], y2)
             else:
                 D = xy_2_r(M[ii, 0], x2, y1, y2)
-            
+
             # Number of receivers to fit
             nrec = int(np.min([np.floor(D / a), n]))
-            
+
             # Check if there is enough space, else break the loop
             if nrec <= 0:
                 continue
-            
+
             # Create receiver poles
 
             if dim_flag is '3D':
@@ -738,7 +738,7 @@ def gen_DCIPsurvey_topo(survey_type, endl, topo, a, b, n, dim_flag='2.5D'):
 
                 # Create line of P1 locations
                 P1 = np.c_[stn_x, stn_y, M[ii+1:ii+nrec+1, 2]]
-                
+
                 if survey_type.lower() in ['dipole-dipole', 'pole-dipole']:
                     # Create line of P2 locations
                     P2 = np.c_[stn_x+b*dl_x, stn_y+b*dl_y, N[ii+1:ii+nrec+1, 2]]
@@ -748,10 +748,10 @@ def gen_DCIPsurvey_topo(survey_type, endl, topo, a, b, n, dim_flag='2.5D'):
 
             else:
                 stn_x = M[ii+1, 0] + np.array(range(int(nrec)))*a
-                
+
                 # Create line of P1 locations
                 P1 = np.c_[stn_x, M[ii+1:ii+nrec+1, -1]]
-                
+
                 if survey_type.lower() in['dipole-dipole', 'pole-dipole']:
                     # Create line of P2 locations
                     P2 = np.c_[stn_x+b, N[ii+1:ii+nrec+1, -1]]
