@@ -9,6 +9,8 @@ from . import Utils
 
 norm = np.linalg.norm
 
+from time import time
+
 
 __all__ = [
     'Minimize', 'Remember', 'SteepestDescent', 'BFGS', 'GaussNewton',
@@ -162,6 +164,14 @@ class IterationPrinters(object):
         "title": "phi_m", "value": lambda M: M.parent.phi_m, "width": 10,
         "format":   "%1.2e"
     }
+    iterationCG = {
+        "title": "iterCG", "value": lambda M: M.cg_count, "width": 10, 
+        "format": "%3d"
+    }
+    ratioX = {
+        "title": "ratio_x", "value": lambda M: norm(M.xc - M.x_last)/norm(M.x_last), 
+        "width": 10, "format": "%1.2e"
+    }
 
 
 class Minimize(object):
@@ -228,18 +238,13 @@ class Minimize(object):
     @Utils.timeIt
     def minimize(self, evalFunction, x0):
         """minimize(evalFunction, x0)
-
         Minimizes the function (evalFunction) starting at the location x0.
-
         :param callable evalFunction: function handle that evaluates: f, g, H = F(x)
         :param numpy.ndarray x0: starting location
         :rtype: numpy.ndarray
         :return: x, the last iterate of the optimization algorithm
-
         evalFunction is a function handle::
-
             (f[, g][, H]) = evalFunction(x, return_g=False, return_H=False )
-
             def evalFunction(x, return_g=False, return_H=False):
                 out = (f,)
                 if return_g:
@@ -247,13 +252,9 @@ class Minimize(object):
                 if return_H:
                     out += (H,)
                 return out if len(out) > 1 else out[0]
-
-
         The algorithm for general minimization is as follows::
-
             startup(x0)
             printInit()
-
             while True:
                 doStartIteration()
                 f, g, H = evalFunction(xc)
@@ -266,7 +267,6 @@ class Minimize(object):
                     xt, caught = modifySearchDirectionBreak(p)
                     if not caught: return xc
                 doEndIteration(xt)
-
             printDone()
             finish()
             return xc
@@ -304,13 +304,10 @@ class Minimize(object):
     def startup(self, x0):
         """
             **startup** is called at the start of any new minimize call.
-
             This will set::
-
                 x0 = x0
                 xc = x0
                 iter = iterLS = 0
-
             :param numpy.ndarray x0: initial x
             :rtype: None
             :return: None
@@ -330,10 +327,8 @@ class Minimize(object):
     @Utils.callHooks('doStartIteration')
     def doStartIteration(self):
         """doStartIteration()
-
             **doStartIteration** is called at the start of each minimize
             iteration.
-
             :rtype: None
             :return: None
         """
@@ -344,10 +339,8 @@ class Minimize(object):
         """
             **printInit** is called at the beginning of the optimization
             routine.
-
             If there is a parent object, printInit will check for a
             parent.printInit function and call that.
-
         """
         pad = ' '*10 if inLS else ''
         name = self.name if not inLS else self.nameLS
@@ -359,10 +352,8 @@ class Minimize(object):
     def printIter(self, inLS=False):
         """
             **printIter** is called directly after function evaluations.
-
             If there is a parent object, printIter will check for a
             parent.printIter function and call that.
-
         """
         pad = ' '*10 if inLS else ''
         Utils.printLine(
@@ -372,10 +363,8 @@ class Minimize(object):
     def printDone(self, inLS=False):
         """
             **printDone** is called at the end of the optimization routine.
-
             If there is a parent object, printDone will check for a
             parent.printDone function and call that.
-
         """
         pad = ' '*10 if inLS else ''
         stop, done = (
@@ -389,12 +378,9 @@ class Minimize(object):
     @Utils.callHooks('finish')
     def finish(self):
         """finish()
-
             **finish** is called at the end of the optimization.
-
             :rtype: None
             :return: None
-
         """
         pass
 
@@ -410,11 +396,8 @@ class Minimize(object):
     @Utils.callHooks('projection')
     def projection(self, p):
         """projection(p)
-
             projects the search direction.
-
             by default, no projection is applied.
-
             :param numpy.ndarray p: searchDirection
             :rtype: numpy.ndarray
             :return: p, projected search direction
@@ -424,29 +407,17 @@ class Minimize(object):
     @Utils.timeIt
     def findSearchDirection(self):
         """findSearchDirection()
-
             **findSearchDirection** should return an approximation of:
-
             .. math::
-
                 H p = - g
-
             Where you are solving for the search direction, p
-
             The default is:
-
             .. math::
-
                 H = I
-
                 p = - g
-
             And corresponds to SteepestDescent.
-
             The latest function evaluations are present in::
-
                 self.f, self.g, self.H
-
             :rtype: numpy.ndarray
             :return: p, Search Direction
         """
@@ -455,13 +426,10 @@ class Minimize(object):
     @Utils.count
     def scaleSearchDirection(self, p):
         """scaleSearchDirection(p)
-
             **scaleSearchDirection** should scale the search direction if
             appropriate.
-
             Set the parameter **maxStep** in the minimize object, to scale back
             the gradient to a maximum size.
-
             :param numpy.ndarray p: searchDirection
             :rtype: numpy.ndarray
             :return: p, Scaled Search Direction
@@ -476,22 +444,16 @@ class Minimize(object):
     @Utils.timeIt
     def modifySearchDirection(self, p):
         """modifySearchDirection(p)
-
             **modifySearchDirection** changes the search direction based on
             some sort of linesearch or trust-region criteria.
-
             By default, an Armijo backtracking linesearch is preformed with the
             following parameters:
-
                 * maxIterLS, the maximum number of linesearch iterations
                 * LSreduction, the expected reduction expected, default: 1e-4
                 * LSshorten, how much the step is reduced, default: 0.5
-
             If the linesearch is completed, and a descent direction is found,
             passLS is returned as True.
-
             Else, a modifySearchDirectionBreak call is preformed.
-
             :param numpy.ndarray p: searchDirection
             :rtype: tuple
             :return: (xt, passLS) numpy.ndarray, bool
@@ -521,17 +483,13 @@ class Minimize(object):
     @Utils.count
     def modifySearchDirectionBreak(self, p):
         """modifySearchDirectionBreak(p)
-
             Code is called if modifySearchDirection fails
             to find a descent direction.
-
             The search direction is passed as input and
             this function must pass back both a new searchDirection,
             and if the searchDirection break has been caught.
-
             By default, no additional work is done, and the
             evalFunction returns a False indicating the break was not caught.
-
             :param numpy.ndarray p: searchDirection
             :rtype: tuple
             :return: (xt, breakCaught) numpy.ndarray, bool
@@ -544,14 +502,10 @@ class Minimize(object):
     @Utils.callHooks('doEndIteration')
     def doEndIteration(self, xt):
         """doEndIteration(xt)
-
             **doEndIteration** is called at the end of each minimize iteration.
-
             By default, function values and x locations are shuffled to store 1
             past iteration in memory.
-
             self.xc must be updated in this code.
-
             :param numpy.ndarray xt: tested new iterate that ensures a descent direction.
             :rtype: None
             :return: None
@@ -582,18 +536,12 @@ class Minimize(object):
 class Remember(object):
     """
         This mixin remembers all the things you tend to forget.
-
         You can remember parameters directly, naming the str in Minimize,
         or pass a tuple with the name and the function that takes Minimize.
-
         For Example::
-
             opt.remember('f',('norm_g', lambda M: np.linalg.norm(M.g)))
-
             opt.minimize(evalFunction, x0)
-
             opt.recall('f')
-
         The param name (str) can also be located in the parent (if no conflicts),
         and it will be looked up by default.
     """
@@ -671,39 +619,30 @@ class ProjectedGradient(Minimize, Remember):
     @Utils.count
     def projection(self, x):
         """projection(x)
-
             Make sure we are feasible.
-
         """
         return np.median(np.c_[self.lower, x, self.upper], axis=1)
 
     @Utils.count
     def activeSet(self, x):
         """activeSet(x)
-
             If we are on a bound
-
         """
         return np.logical_or(x == self.lower, x == self.upper)
 
     @Utils.count
     def inactiveSet(self, x):
         """inactiveSet(x)
-
             The free variables.
-
         """
         return np.logical_not(self.activeSet(x))
 
     @Utils.count
     def bindingSet(self, x):
         """bindingSet(x)
-
             If we are on a bound and the negative gradient points away from the
             feasible set.
-
             Optimality condition. (Satisfies Kuhn-Tucker) MoreToraldo91
-
         """
         bind_up  = np.logical_and(x == self.lower, self.g >= 0)
         bind_low = np.logical_and(x == self.upper, self.g <= 0)
@@ -712,7 +651,6 @@ class ProjectedGradient(Minimize, Remember):
     @Utils.timeIt
     def findSearchDirection(self):
         """findSearchDirection()
-
             Finds the search direction based on either CG or steepest descent.
         """
         self.aSet_prev = self.activeSet(self.xc)
@@ -822,7 +760,6 @@ class BFGS(Minimize, Remember):
     def bfgsH0(self):
         """
             Approximate Hessian used in preconditioning the problem.
-
             Must be a SimPEG.Solver
         """
         if getattr(self, '_bfgsH0', None) is None:
@@ -899,18 +836,12 @@ class GaussNewton(Minimize, Remember):
 class InexactGaussNewton(BFGS, Minimize, Remember):
     """
         Minimizes using CG as the inexact solver of
-
         .. math::
-
             \mathbf{H p = -g}
-
         By default BFGS is used as the preconditioner.
-
         Use *nbfgs* to set the memory limitation of BFGS.
-
         To set the initial H0 to be used in BFGS, set *bfgsH0* to be a
         SimPEG.Solver
-
     """
 
     def __init__(self, **kwargs):
@@ -925,9 +856,7 @@ class InexactGaussNewton(BFGS, Minimize, Remember):
     def approxHinv(self):
         """
             The approximate Hessian inverse is used to precondition CG.
-
             Default uses BFGS, with an initial H0 of *bfgsH0*.
-
             Must be a scipy.sparse.linalg.LinearOperator
         """
         _approxHinv = getattr(self, '_approxHinv', None)
@@ -965,20 +894,15 @@ class SteepestDescent(Minimize, Remember):
 class NewtonRoot(object):
     """
         Newton Method - Root Finding
-
         root = newtonRoot(fun,x);
-
         Where fun is the function that returns the function value as well as
         the gradient.
-
         For iterative solving of dh = -J\\r, use O.solveTol = TOL. For direct
         solves, use SOLVETOL = 0 (default)
-
         Rowan Cockett
         16-May-2013 16:29:51
         University of British Columbia
         rcockett@eos.ubc.ca
-
     """
 
     tol = 1.000e-06
@@ -996,15 +920,12 @@ class NewtonRoot(object):
 
     def root(self, fun, x):
         """root(fun, x)
-
         Function Should have the form::
-
             def evalFunction(x, return_g=False):
                     out = (f,)
                     if return_g:
                         out += (g,)
                     return out if len(out) > 1 else out[0]
-
         """
         if self.comments:
             print('Newton Method:\n')
@@ -1079,18 +1000,14 @@ class ProjectedGNCG(BFGS, Minimize, Remember):
     @Utils.count
     def projection(self, x):
         """projection(x)
-
             Make sure we are feasible.
-
         """
         return np.median(np.c_[self.lower, x, self.upper], axis=1)
 
     @Utils.count
     def activeSet(self, x):
         """activeSet(x)
-
             If we are on a bound
-
         """
         return np.logical_or(x <= self.lower, x >= self.upper)
 
@@ -1098,9 +1015,7 @@ class ProjectedGNCG(BFGS, Minimize, Remember):
     def approxHinv(self):
         """
             The approximate Hessian inverse is used to precondition CG.
-
             Default uses BFGS, with an initial H0 of *bfgsH0*.
-
             Must be a scipy.sparse.linalg.LinearOperator
         """
         _approxHinv = getattr(self, '_approxHinv', None)
@@ -1121,7 +1036,7 @@ class ProjectedGNCG(BFGS, Minimize, Remember):
             findSearchDirection()
             Finds the search direction based on projected CG
         """
-
+        self.cg_count = 0
         Active = self.activeSet(self.xc)
         temp = sum((np.ones_like(self.xc.size)-Active))
 
@@ -1129,18 +1044,18 @@ class ProjectedGNCG(BFGS, Minimize, Remember):
         resid = -(1-Active) * self.g
 
         r = (resid - (1-Active)*(self.H * step))
+        r0 = r.copy()
 
         p = self.approxHinv*r
 
         sold = np.dot(r, p)
 
         count = 0
-
-        while np.all([
-            np.linalg.norm(r) > self.tolCG,
-            count < self.maxIterCG
-        ]):
-
+        print("Start CG solve")
+        tc = time()
+        for i in range(self.maxIterCG):
+#            print("i: ", i)
+#            t_cg = time()
             count += 1
 
             q = (1-Active)*(self.H * p)
@@ -1150,6 +1065,10 @@ class ProjectedGNCG(BFGS, Minimize, Remember):
             step += alpha * p
 
             r -= alpha * q
+            
+#            print("r.dot(r) / r0.dot(r0): ", r.dot(r) / r0.dot(r0))
+            if r.dot(r) / r0.dot(r0) < self.tolCG:
+                break
 
             h = self.approxHinv * r
 
@@ -1158,8 +1077,10 @@ class ProjectedGNCG(BFGS, Minimize, Remember):
             p = h + (snew / sold * p)
 
             sold = snew
+#            print("time for one CG iteration: ", time() - t_cg)
             # End CG Iterations
         self.cg_count += count
+        print("CG solve time: " + str(time()-tc))
 
         # Take a gradient step on the active cells if exist
         if temp != self.xc.size:
