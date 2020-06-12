@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.sparse as sp
 
-from SimPEG import Utils
-from SimPEG.Regularization import BaseRegularization
+from .. import Utils
+from .base import BaseRegularization
 
 
 class BaseCoupling(BaseRegularization):
@@ -86,7 +86,6 @@ class JTV(BaseCoupling):
         if getattr(self, '_epsilon', None) is None:
             
             self._epsilon = 1e-6
-            #self._epsilon = 0
 
         return self._epsilon
 
